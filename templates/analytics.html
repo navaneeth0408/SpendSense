@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - SpendSense</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_buster }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="app-header">
+            <div class="brand">
+                <img src="{{ url_for('static', filename='img/spendsense-logo.svg') }}" alt="SpendSense Logo" class="brand-logo">
+                <h1 class="brand-title">SpendSense</h1>
+            </div>
+            <nav class="main-nav">
+                <a href="/" class="nav-link">Dashboard</a>
+                <a href="/analytics" class="nav-link">Analytics</a>
+                <a href="/recurring-subscriptions" class="nav-link">Recurring & Subscriptions</a>
+                <a href="/reports" class="nav-link">Reports</a>
+                <a href="/settings" class="nav-link">Settings</a>
+            </nav>
+            <div class="header-controls">
+                <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Dark Mode">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="theme-icon">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                </button>
+                <div class="user-info">
+                    {% if request.endpoint == 'index' %}
+                    <span class="welcome-text">Welcome, <span id="username-display" class="username-highlight"></span></span>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="card">
+                <h2 class="card-title">Time Range Filters</h2>
+                <div style="display:flex;flex-direction:column;gap:16px;">
+                    <div class="selector-wrapper">
+                        <label>Preset Ranges</label>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="advanced-filter-btn" data-range="7days">Last 7 Days</button>
+                            <button class="advanced-filter-btn" data-range="30days">Last 30 Days</button>
+                            <button class="advanced-filter-btn" data-range="3months">Last 3 Months</button>
+                            <button class="advanced-filter-btn" data-range="6months">Last 6 Months</button>
+                            <button class="advanced-filter-btn" data-range="year">This Year</button>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:40px;align-items:flex-start;">
+                        <div class="selector-wrapper">
+                            <label>Custom Range</label>
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <input type="date" id="custom-start-date" style="padding:8px;border:1px solid var(--border-light);border-radius:6px;font-family:inherit;">
+                                <span>to</span>
+                                <input type="date" id="custom-end-date" style="padding:8px;border:1px solid var(--border-light);border-radius:6px;font-family:inherit;">
+                                <button id="apply-custom-range" style="padding:8px 24px;background:var(--primary);color:white;border:none;border-radius:6px;cursor:pointer;font-weight:500;">Apply</button>
+                            </div>
+                        </div>
+                        <div class="selector-wrapper" style="margin-left:auto;text-align:center;">
+                            <label>Export</label>
+                            <div style="display:flex;gap:8px;justify-content:center;">
+                                <button id="export-excel-btn" style="padding:8px 16px;background:var(--border-light);border:none;border-radius:6px;cursor:pointer;font-weight:500;min-width:80px;">Excel</button>
+                                <button id="export-pdf-btn" style="padding:8px 16px;background:var(--border-light);border:none;border-radius:6px;cursor:pointer;font-weight:500;min-width:80px;">PDF</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Smart Insights</h3>
+                <div id="smart-insights" style="display:grid;gap:10px;"></div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">🚨 Spending Alerts</h3>
+                <div id="spending-alerts" style="display:grid;gap:10px;"></div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">🔮 Spending Forecast</h3>
+                <div id="spending-forecast" style="padding:16px;"></div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">📊 Period Comparison</h3>
+                <div id="period-comparison" style="display:grid;gap:10px;"></div>
+            </div>
+
+            <div class="content-grid" style="grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+                <div class="left-column">
+                    <div class="card">
+                        <h3 class="card-title">Overview Metrics</h3>
+                        <div id="overview-metrics" style="display:flex;gap:12px;flex-wrap:wrap;"></div>
+                    </div>
+
+                    <div class="card">
+                        <h3 class="card-title">Budget Health</h3>
+                        <div id="budget-health-meter" style="padding:16px;"></div>
+                    </div>
+
+                    <div class="card">
+                        <h3 class="card-title">Top Categories</h3>
+                        <div id="category-ranking" style="overflow-x:auto;"></div>
+                    </div>
+
+                    <div class="card">
+                        <h3 class="card-title">Top Spending Days</h3>
+                        <div id="topDays-parent">
+                            <ol id="top-days"></ol>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="right-column">
+                    <div class="card spending-trend-card">
+                        <h3 class="card-title">Spending Trend</h3>
+                        <div id="trendLine-parent" class="chart-wrapper">
+                            <canvas id="trendLine"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card budget-vs-actual-card">
+                        <h3 class="card-title">Budget vs Actual</h3>
+                        <div id="budgetBar-parent" class="chart-scroll chart-wrapper">
+                            <canvas id="budgetBar"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card category-pie-card">
+                        <h3 class="card-title">Category Distribution</h3>
+                        <div id="categoryPie-parent" class="chart-wrapper">
+                            <canvas id="categoryPie"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Drilldown Modal -->
+        <div id="drilldown-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+            <div style="background:var(--card-white);border-radius:12px;width:90%;max-width:600px;max-height:80vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:20px;border-bottom:1px solid var(--border-light);">
+                    <h2 id="drilldown-title" style="margin:0;color:var(--text-heading);font-size:18px;font-weight:600;">Transactions</h2>
+                    <button id="drilldown-close" style="background:none;border:none;font-size:24px;color:var(--text-secondary);cursor:pointer;padding:0;width:30px;height:30px;display:flex;align-items:center;justify-content:center;">×</button>
+                </div>
+                <div id="drilldown-body" style="overflow-y:auto;flex:1;padding:16px;">
+                    <p style="color:var(--text-secondary);text-align:center;">Loading transactions...</p>
+                </div>
+                <div style="padding:16px;border-top:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center;background:var(--bg-light);">
+                    <span id="drilldown-summary" style="color:var(--text-body);font-size:14px;"></span>
+                    <button id="drilldown-close-btn" style="padding:10px 16px;background:var(--border-light);border:none;border-radius:6px;cursor:pointer;color:var(--text-heading);font-weight:500;">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global footer -->
+        <footer class="site-footer">
+            <div class="footer-links">
+                <a href="/settings#about-section">About</a>
+                <a href="/settings#contact-section">Contact</a>
+                <a href="/settings#privacy-section">Privacy</a>
+                <a href="/settings#terms-section">Terms</a>
+            </div>
+            <div class="footer-meta">
+                © {{ current_year if current_year is defined else 2026 }} SpendSense. All rights reserved.
+            </div>
+        </footer>
+
+    <script src="{{ url_for('static', filename='js/analytics.js') }}?v={{ cache_buster }}"></script>
+    <script>
+        // Hide welcome greeting on non-dashboard pages
+        document.addEventListener('DOMContentLoaded', function() {
+            const welcomeText = document.querySelector('.welcome-text');
+            if (welcomeText) {
+                welcomeText.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
+

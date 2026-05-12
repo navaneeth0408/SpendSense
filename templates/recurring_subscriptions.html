@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recurring & Subscriptions - SpendSense</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_buster }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Main App Section (auth handled via redirect, so show immediately) -->
+        <div id="app-section" class="section">
+            <header class="app-header">
+                <div class="brand">
+                    <img src="{{ url_for('static', filename='img/spendsense-logo.svg') }}" alt="SpendSense Logo" class="brand-logo">
+                    <h1 class="brand-title">SpendSense</h1>
+                </div>
+                <nav class="main-nav">
+                    <a href="/" class="nav-link">Dashboard</a>
+                    <a href="/analytics" class="nav-link">Analytics</a>
+                    <a href="/recurring-subscriptions" class="nav-link active">Recurring & Subscriptions</a>
+                    <a href="/reports" class="nav-link">Reports</a>
+                    <a href="/settings" class="nav-link">Settings</a>
+                </nav>
+                <div class="header-controls">
+                    <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Dark Mode">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="theme-icon">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
+                    <div class="user-info">
+                        {% if request.endpoint == 'index' %}
+                        <span class="welcome-text">Welcome, <span id="username-display" class="username-highlight"></span></span>
+                        {% endif %}
+                        <button id="logout-btn" class="btn-primary">Logout</button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="main-content">
+                <!-- Recurring & Subscriptions Cards Container -->
+                <div class="recurring-section">
+                    <!-- Recurring Expenses Card -->
+                    <div class="card recurring-card">
+                        <h2 class="card-title">💳 Recurring Expenses</h2>
+                        <p class="section-description">Track fixed recurring payments like rent, EMI, and subscriptions.</p>
+                        
+                        <div class="form-section">
+                            <h3 class="subsection-title">Add New Recurring Expense</h3>
+                            <form id="recurring-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="recurring-name">Expense Name</label>
+                                        <input type="text" id="recurring-name" placeholder="e.g., Rent, EMI, Internet" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="recurring-amount">Amount</label>
+                                        <div class="amount-row">
+                                            <select id="recurring-currency" class="currency-select">
+                                                <option value="INR" data-symbol="₹">₹ INR</option>
+                                                <option value="USD" data-symbol="$">$ USD</option>
+                                                <option value="EUR" data-symbol="€">€ EUR</option>
+                                                <option value="GBP" data-symbol="£">£ GBP</option>
+                                            </select>
+                                            <input type="number" id="recurring-amount" step="0.01" min="0.01" placeholder="0.00" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="recurring-category">Category</label>
+                                        <select id="recurring-category" required>
+                                            <option value="">Select Category</option>
+                                            <option value="Bills">Bills</option>
+                                            <option value="Rent">Rent</option>
+                                            <option value="Loan">Loan</option>
+                                            <option value="Subscriptions">Subscriptions</option>
+                                            <option value="Insurance">Insurance</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="recurring-frequency">Frequency</label>
+                                        <select id="recurring-frequency" required>
+                                            <option value="">Select Frequency</option>
+                                            <option value="Weekly">Weekly</option>
+                                            <option value="Monthly">Monthly</option>
+                                            <option value="Yearly">Yearly</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="recurring-start-date">Start Date</label>
+                                        <input type="date" id="recurring-start-date" required>
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn-primary">Add Recurring Expense</button>
+                            </form>
+                        </div>
+                        
+                        <div class="recurring-stats">
+                            <div class="stat-card">
+                                <span class="stat-label">Total Monthly</span>
+                                <span id="recurring-total-monthly" class="stat-value">₹0.00</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Active Expenses</span>
+                                <span id="recurring-count" class="stat-value">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="recurring-list-section">
+                            <h3 class="subsection-title">Your Recurring Expenses</h3>
+                            <div id="recurring-list" class="recurring-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Subscriptions Card -->
+                    <div class="card subscriptions-card">
+                        <h2 class="card-title">🎬 Subscriptions</h2>
+                        <p class="section-description">Manage digital subscriptions and track renewal dates.</p>
+                        
+                        <div class="form-section">
+                            <h3 class="subsection-title">Add New Subscription</h3>
+                            <form id="subscription-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="subscription-service">Service Name</label>
+                                        <input type="text" id="subscription-service" placeholder="e.g., Netflix, Spotify" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="subscription-amount">Amount</label>
+                                        <div class="amount-row">
+                                            <select id="subscription-currency" class="currency-select">
+                                                <option value="INR" data-symbol="₹">₹ INR</option>
+                                                <option value="USD" data-symbol="$">$ USD</option>
+                                                <option value="EUR" data-symbol="€">€ EUR</option>
+                                                <option value="GBP" data-symbol="£">£ GBP</option>
+                                            </select>
+                                            <input type="number" id="subscription-amount" step="0.01" min="0.01" placeholder="0.00" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="subscription-cycle">Billing Cycle</label>
+                                        <select id="subscription-cycle" required>
+                                            <option value="">Select Billing Cycle</option>
+                                            <option value="Monthly">Monthly</option>
+                                            <option value="Quarterly">Quarterly</option>
+                                            <option value="Yearly">Yearly</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="subscription-renewal">Renewal Date</label>
+                                        <input type="date" id="subscription-renewal" required>
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn-primary">Add Subscription</button>
+                            </form>
+                        </div>
+                        
+                        <div class="subscription-stats">
+                            <div class="stat-card highlight">
+                                <span class="stat-label">Total Monthly Cost</span>
+                                <span id="subscription-total-monthly" class="stat-value">₹0.00</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-label">Active Subscriptions</span>
+                                <span id="subscription-count" class="stat-value">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="subscription-list-section">
+                            <h3 class="subsection-title">Your Subscriptions</h3>
+                            <div id="subscription-list" class="subscription-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Snackbar for notifications -->
+    <div id="snackbar" class="snackbar hide">
+        <span id="snackbar-message" class="snackbar-message"></span>
+        <button id="snackbar-action" class="snackbar-action">Undo</button>
+    </div>
+
+    <!-- Global footer -->
+    <footer class="site-footer">
+        <div class="footer-links">
+            <a href="/settings#about-section">About</a>
+            <a href="/settings#contact-section">Contact</a>
+            <a href="/settings#privacy-section">Privacy</a>
+            <a href="/settings#terms-section">Terms</a>
+        </div>
+        <div class="footer-meta">
+            © {{ current_year if current_year is defined else 2026 }} SpendSense. All rights reserved.
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/recurring_subscriptions.js') }}?v={{ cache_buster }}"></script>
+</body>
+</html>

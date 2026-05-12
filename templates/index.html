@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpendSense - Daily Expense Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_buster }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Auth Section -->
+        <div id="auth-section" class="section">
+            <div class="auth-container">
+                <div class="brand">
+                    <img src="{{ url_for('static', filename='img/spendsense-logo.svg') }}" alt="SpendSense Logo" class="brand-logo">
+                    <h1 class="brand-title">SpendSense</h1>
+                </div>
+                
+                <div id="login-form" class="auth-form">
+                    <h2>Login</h2>
+                    <form id="loginForm" onsubmit="handleLogin(event)">
+                        <input type="text" id="loginUsername" placeholder="Username" required>
+                        <input type="password" id="loginPassword" placeholder="Password" required>
+                        <div class="forgot-password-link">
+                            <a href="#" id="forgotPasswordLink" onclick="event.preventDefault(); window.location.href='/forgot-password';">Forgot Password?</a>
+                        </div>
+                        <button type="submit" class="btn-primary">Login</button>
+                    </form>
+                    <p>Don't have an account? <a href="#" id="showRegister">Register</a></p>
+                </div>
+                
+                <div id="register-form" class="auth-form" style="display: none;">
+                    <h2>Register</h2>
+                    <form id="registerForm">
+                        <input type="text" id="registerUsername" placeholder="Username" required>
+                        <input type="password" id="registerPassword" placeholder="Password" required>
+                        <button type="submit" class="btn-primary">Register</button>
+                    </form>
+                    <p>Already have an account? <a href="#" id="showLogin">Login</a></p>
+                </div>
+                
+                <div id="auth-error" class="error-message"></div>
+            </div>
+        </div>
+        
+        <!-- Main App Section -->
+        <div id="app-section" class="section" style="display: none;">
+            <header class="app-header">
+                <div class="brand">
+                    <img src="{{ url_for('static', filename='img/spendsense-logo.svg') }}" alt="SpendSense Logo" class="brand-logo">
+                    <h1 class="brand-title">SpendSense</h1>
+                </div>
+                <nav class="main-nav">
+                    <a href="/" class="nav-link">Dashboard</a>
+                    <a href="/analytics" class="nav-link">Analytics</a>
+                    <a href="/recurring-subscriptions" class="nav-link">Recurring & Subscriptions</a>
+                    <a href="/reports" class="nav-link">Reports</a>
+                    <a href="/settings" class="nav-link">Settings</a>
+                </nav>
+                <div class="header-controls">
+                    <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Dark Mode">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="theme-icon">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
+                    <div class="user-info">
+                        {% if request.endpoint == 'index' %}
+                        <span class="welcome-text">Welcome, <span id="username-display" class="username-highlight"></span></span>
+                        {% endif %}
+                        <button id="logout-btn" class="btn-primary">Logout</button>
+                    </div>
+                </div>
+            </header>
+            
+            <div class="main-content">
+                <div class="content-grid">
+                    <!-- Left Column -->
+                    <div class="left-column">
+                        <!-- Weekly Summary Card -->
+                        <div class="card weekly-summary-card">
+                            <h2 class="card-title weekly-card-title">Weekly Summary</h2>
+                            <div class="weekly-navigation">
+                                <button class="week-nav-btn" id="prev-week-btn" title="Previous Week">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                </button>
+                                <div class="weekly-range" id="weekly-range"></div>
+                                <button class="week-nav-btn" id="next-week-btn" title="Next Week">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="weekly-total-display">
+                                <span class="total-label">Total This Week</span>
+                                <div id="weekly-total" class="total-amount">$0.00</div>
+                                <div id="weekly-trend" class="trend-indicator"></div>
+                            </div>
+                            <div id="weekly-categories" class="weekly-categories"></div>
+                        </div>
+                        
+                        <!-- Yearly Summary Card -->
+                        <div class="card summary-card yearly-summary-card">
+                            <div class="card-header">
+                                <h2 class="card-title yearly-card-title" id="yearly-title">Yearly Summary</h2>
+                                <select id="yearly-year-select" class="yearly-year-select" style="width: 120px; padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border-color); background-color: var(--bg-secondary); color: var(--text-primary); font-size: 14px; cursor: pointer;"></select>
+                            </div>
+                            <div class="total-display">
+                                <span class="total-label">Total This Year</span>
+                                <div id="yearly-total" class="total-amount">₹0.00 INR</div>
+                            </div>
+                            <div id="yearly-category-breakdown" class="category-breakdown"></div>
+                        </div>
+                        
+                        <!-- Insights Card -->
+                        <div class="card insights-card">
+                            <h2 class="card-title">Spending Insights</h2>
+                            <div id="insights-content" class="insights-content">
+                                <div class="insight-loading">Loading insights...</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Add Expense Card -->
+                        <div class="card expense-form-card">
+                            <h2 class="card-title" id="form-title">Add Expense</h2>
+                            <form id="expense-form">
+                                <input type="hidden" id="expense-id">
+                                <div class="form-group">
+                                    <label for="amount">Amount</label>
+                                    <div class="amount-row">
+                                        <select id="currency" class="currency-select" aria-label="Currency">
+                                            <option value="INR" data-symbol="₹">₹ INR</option>
+                                            <option value="USD" data-symbol="$">$ USD</option>
+                                            <option value="EUR" data-symbol="€">€ EUR</option>
+                                            <option value="GBP" data-symbol="£">£ GBP</option>
+                                        </select>
+                                        <input type="number" id="amount" step="0.01" min="0.01" placeholder="0.00" required>
+                                    </div>
+                                    <div id="amount-error" class="input-error" style="display:none;"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="category">Category</label>
+                                    <select id="category" required>
+                                        <option value="">Select Category</option>
+                                        <option value="Food">Food</option>
+                                        <option value="Transport">Transport</option>
+                                        <option value="Shopping">Shopping</option>
+                                        <option value="Bills">Bills</option>
+                                        <option value="Entertainment">Entertainment</option>
+                                        <option value="Healthcare">Healthcare</option>
+                                        <option value="Education">Education</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                    <input type="text" id="custom-category" class="custom-category-input" placeholder="Enter custom category" style="display:none;">
+                                </div>
+                                <div class="form-group">
+                                    <label for="date">Date</label>
+                                    <input type="date" id="date" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="notes">Notes <span class="optional">(Optional)</span></label>
+                                    <textarea id="notes" rows="3" placeholder="Add any additional notes..."></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="recurring-frequency">Recurrence <span class="optional">(Optional)</span></label>
+                                    <select id="recurring-frequency" class="recurring-frequency-select">
+                                        <option value="">None (One-time expense)</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                    </select>
+                                    <small class="recurrence-info" style="display: block; color: var(--text-secondary); margin-top: 6px; font-size: 12px;">Recurring expenses will be auto-generated on the specified day each period</small>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" id="submit-btn" class="btn-primary">Add Expense</button>
+                                    <button type="button" id="cancel-btn" class="btn-secondary" style="display: none;">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Column -->
+                    <div class="right-column">
+                        <!-- Month & Year Selector -->
+                        <div class="month-year-selector-card">
+                            <label>Select Period:</label>
+                            <div class="selector-group">
+                                <div class="selector-wrapper">
+                                    <label for="year-select" class="selector-label">Year</label>
+                                    <select id="year-select" class="year-select"></select>
+                                </div>
+                                <div class="selector-wrapper">
+                                    <label for="month-select" class="selector-label">Month</label>
+                                    <select id="month-select" class="month-select"></select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Monthly Summary Card -->
+                        <div class="card summary-card">
+                            <h2 class="card-title">Monthly Summary</h2>
+                            <div class="total-display">
+                                <span class="total-label">Total This Month</span>
+                                <div id="monthly-total" class="total-amount">$0.00</div>
+                                <div id="monthly-trend" class="trend-indicator"></div>
+                            </div>
+                            <div id="category-breakdown" class="category-breakdown"></div>
+                            
+                            <!-- Category Insight Tooltip -->
+                            <div id="category-tooltip" class="category-tooltip" style="display: none;">
+                                <div class="tooltip-content">
+                                    <div class="tooltip-header">
+                                        <h4 id="tooltip-category-name"></h4>
+                                        <button class="tooltip-close" onclick="closeCategoryTooltip()" style="background: none; border: none; cursor: pointer; font-size: 18px; color: var(--text-secondary);">&times;</button>
+                                    </div>
+                                    <div class="tooltip-body">
+                                        <div class="tooltip-row">
+                                            <span class="tooltip-label">Total Spent:</span>
+                                            <span class="tooltip-value" id="tooltip-total-spent"></span>
+                                        </div>
+                                        <div class="tooltip-row">
+                                            <span class="tooltip-label">% of Total:</span>
+                                            <span class="tooltip-value" id="tooltip-percentage"></span>
+                                        </div>
+                                        <div class="tooltip-row">
+                                            <span class="tooltip-label">Avg per Day:</span>
+                                            <span class="tooltip-value" id="tooltip-avg-per-day"></span>
+                                        </div>
+                                        <div class="tooltip-row" id="tooltip-budget-row" style="display: none;">
+                                            <span class="tooltip-label">Budget Remaining:</span>
+                                            <span class="tooltip-value" id="tooltip-budget-remaining"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="comparison-section">
+                                <div class="comparison-header">
+                                    <h3 class="comparison-title">Compare Months</h3>
+                                    <button id="toggle-comparison" class="toggle-comparison-btn">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div id="comparison-content" class="comparison-content" style="display: none;">
+                                    <div class="comparison-selectors">
+                                        <div class="month-selector">
+                                            <label for="compare-month1">Month 1:</label>
+                                            <div class="selector-row">
+                                                <select id="compare-year1" class="compare-year-select"></select>
+                                                <select id="compare-month1" class="compare-month-select"></select>
+                                            </div>
+                                        </div>
+                                        <div class="month-selector">
+                                            <label for="compare-month2">Month 2:</label>
+                                            <div class="selector-row">
+                                                <select id="compare-year2" class="compare-year-select"></select>
+                                                <select id="compare-month2" class="compare-month-select"></select>
+                                            </div>
+                                        </div>
+                                        <button id="compare-btn" class="btn-secondary compare-btn">Compare</button>
+                                    </div>
+                                    <div id="comparison-results" class="comparison-results" style="display: none;">
+                                        <div class="comparison-summary">
+                                            <div class="comparison-total">
+                                                <span class="comparison-label">Total Difference:</span>
+                                                <span id="total-difference" class="difference-amount"></span>
+                                                <span id="total-percentage" class="percentage-change"></span>
+                                            </div>
+                                        </div>
+                                        <div id="category-comparison" class="category-comparison"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Expenses List Card -->
+                        <div class="card expenses-card">
+                            <h2 class="card-title">Expenses</h2>
+                            <div class="search-box-wrapper">
+                                <input type="text" id="expense-search" class="expense-search-box" placeholder="Search expenses…">
+                                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <div class="filter-section">
+                                <div class="time-filter-group">
+                                    <label class="filter-group-label">Time Period:</label>
+                                    <div class="time-filter-buttons">
+                                        <button class="time-filter-btn active" data-period="weekly" id="filter-weekly">Weekly</button>
+                                        <button class="time-filter-btn" data-period="monthly" id="filter-monthly">Monthly</button>
+                                    </div>
+                                </div>
+                                <div class="category-filter-group">
+                                    <label for="category-filter">Filter by Category:</label>
+                                    <select id="category-filter" class="category-filter-select">
+                                        <option value="">All Categories</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="export-section">
+                                <button id="export-btn" class="export-btn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    Export to CSV
+                                </button>
+                            </div>
+                            <div class="quick-time-filters">
+                                <button class="quick-filter-btn active" data-quick="today">Today</button>
+                                <button class="quick-filter-btn" data-quick="week">This Week</button>
+                                <button class="quick-filter-btn" data-quick="month">This Month</button>
+                                <button class="quick-filter-btn" data-quick="last-month">Last Month</button>
+                                <button class="quick-filter-btn" data-quick="last-3-months">Last 3 Months</button>
+                                <button class="quick-filter-btn" data-quick="year">This Year</button>
+                            </div>
+                            <div id="expenses-list" class="expenses-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Snackbar for notifications -->
+    <div id="snackbar" class="snackbar hide">
+        <span id="snackbar-message" class="snackbar-message"></span>
+        <button id="snackbar-action" class="snackbar-action">Undo</button>
+    </div>
+
+    <!-- Global footer -->
+    <footer class="site-footer">
+        <div class="footer-links">
+            <a href="/settings#about-section">About</a>
+            <a href="/settings#contact-section">Contact</a>
+            <a href="/settings#privacy-section">Privacy</a>
+            <a href="/settings#terms-section">Terms</a>
+        </div>
+        <div class="footer-meta">
+            © {{ current_year if current_year is defined else 2026 }} SpendSense. All rights reserved.
+        </div>
+    </footer>
+    
+    <script src="{{ url_for('static', filename='js/app.js') }}?v={{ cache_buster }}"></script>
+</body>
+</html>

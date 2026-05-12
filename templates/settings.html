@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - SpendSense</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_buster }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="app-header">
+            <div class="brand">
+                <img src="{{ url_for('static', filename='img/spendsense-logo.svg') }}" alt="SpendSense Logo" class="brand-logo">
+                <h1 class="brand-title">SpendSense</h1>
+            </div>
+            <nav class="main-nav">
+                <a href="/" class="nav-link">Dashboard</a>
+                <a href="/analytics" class="nav-link">Analytics</a>
+                <a href="/recurring-subscriptions" class="nav-link">Recurring & Subscriptions</a>
+                <a href="/reports" class="nav-link">Reports</a>
+
+                <a href="/settings" class="nav-link active">Settings</a>
+            </nav>
+            <div class="header-controls">
+                <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Dark Mode">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="theme-icon">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                </button>
+                <div class="user-info">
+                    {% if request.endpoint == 'index' %}
+                    <span class="welcome-text">Welcome, <span id="username-display" class="username-highlight"></span></span>
+                    {% endif %}
+                    <button id="logout-btn" class="btn-primary">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content settings-content">
+            <div class="settings-header">
+                <h1>Settings</h1>
+                <p class="settings-subtitle">Manage your profile, preferences, and notifications</p>
+            </div>
+
+            <!-- Profile & Account Card -->
+            <div class="card settings-card">
+                <div class="card-header">
+                    <h2 class="card-title">👤 Profile & Account</h2>
+                </div>
+                <div class="card-body">
+                    <div class="settings-section">
+                        <div class="setting-item">
+                            <label class="setting-label">Username</label>
+                            <input type="text" id="username-input" class="setting-input" placeholder="Enter username">
+                            <span class="setting-helper">Your unique identifier</span>
+                        </div>
+
+                        <div class="setting-item">
+                            <label class="setting-label">Email</label>
+                            <div class="email-input-group">
+                                <input type="email" id="email-input" class="setting-input" readonly placeholder="No email set">
+                                <button id="update-email-btn" class="btn-secondary">Update Email</button>
+                            </div>
+                            <span class="setting-helper">Securely update your email address</span>
+                        </div>
+
+                        <div class="setting-item">
+                            <label class="setting-label">Preferred Name</label>
+                            <input type="text" id="preferred-name-input" class="setting-input" placeholder="Enter your preferred name">
+                            <span class="setting-helper">How you'd like to be addressed</span>
+                        </div>
+
+                        <div class="settings-actions">
+                            <button id="change-password-btn" class="btn-secondary">Change Password</button>
+                            <button id="logout-all-btn" class="btn-secondary">Logout from all devices</button>
+                            <button id="save-profile-btn" class="btn-primary">Save Profile</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Currency & Localization Card -->
+            <div class="card settings-card">
+                <div class="card-header">
+                    <h2 class="card-title">🌐 Currency & Localization</h2>
+                </div>
+                <div class="card-body">
+                    <div class="settings-section">
+                        <div class="setting-item">
+                            <label class="setting-label">Default Currency</label>
+                            <select id="currency-select" class="setting-select">
+                                <option value="INR">₹ Indian Rupee (INR)</option>
+                                <option value="USD">$ US Dollar (USD)</option>
+                                <option value="EUR">€ Euro (EUR)</option>
+                                <option value="GBP">£ British Pound (GBP)</option>
+                            </select>
+                            <span class="setting-helper">Used across dashboard and exports</span>
+                        </div>
+
+                        <div class="setting-item">
+                            <label class="setting-label">Date Format</label>
+                            <select id="date-format-select" class="setting-select">
+                                <option value="DD/MM/YYYY">DD/MM/YYYY (01/12/2025)</option>
+                                <option value="MM/DD/YYYY">MM/DD/YYYY (12/01/2025)</option>
+                                <option value="YYYY-MM-DD">YYYY-MM-DD (2025-12-01)</option>
+                            </select>
+                            <span class="setting-helper">Format for date display</span>
+                        </div>
+
+                        <div class="setting-item">
+                            <label class="setting-label">Number Format</label>
+                            <select id="number-format-select" class="setting-select">
+                                <option value="en-IN">Indian (1,00,000)</option>
+                                <option value="en-US">Western (100,000)</option>
+                            </select>
+                            <span class="setting-helper">How numbers are displayed</span>
+                        </div>
+
+                        <div class="settings-actions">
+                            <button id="save-localization-btn" class="btn-primary">Save Localization</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications & Alerts Card -->
+            <div class="card settings-card">
+                <div class="card-header">
+                    <h2 class="card-title">🔔 Notifications & Alerts</h2>
+                </div>
+                <div class="card-body">
+                    <div class="settings-section">
+                        <div class="setting-toggle">
+                            <div class="toggle-info">
+                                <label class="setting-label">Budget Alert</label>
+                                <span class="setting-helper">Notify when 80% of monthly budget is used</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="budget-alert-toggle" class="toggle-input">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-toggle">
+                            <div class="toggle-info">
+                                <label class="setting-label">Spike Alert</label>
+                                <span class="setting-helper">Notify on unusually high daily spending</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="spike-alert-toggle" class="toggle-input">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-toggle">
+                            <div class="toggle-info">
+                                <label class="setting-label">Weekly Summary</label>
+                                <span class="setting-helper">Get a weekly spending summary every Monday</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="weekly-summary-toggle" class="toggle-input">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-toggle">
+                            <div class="toggle-info">
+                                <label class="setting-label">Monthly Report</label>
+                                <span class="setting-helper">Receive a detailed monthly expense report</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="monthly-report-toggle" class="toggle-input">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-actions">
+                            <button id="save-notifications-btn" class="btn-primary">Save Preferences</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories Management Card -->
+            <div class="card settings-card">
+                <div class="card-header">
+                    <h2 class="card-title">📂 Manage Categories</h2>
+                </div>
+                <div class="card-body">
+                    <div class="settings-section">
+                        <div class="category-controls">
+                            <input type="text" id="new-category-name" class="setting-input" placeholder="Enter category name">
+                            <input type="color" id="new-category-color" class="color-picker" value="#14b8a6" title="Choose category color">
+                            <button id="add-category-btn" class="btn-primary">Add Category</button>
+                        </div>
+                        <div id="categories-list" class="categories-list">
+                            <!-- Categories will be dynamically loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data & Export Card -->
+            <div class="card settings-card">
+                <div class="card-header">
+                    <h2 class="card-title">📊 Data & Export</h2>
+                </div>
+                <div class="card-body">
+                    <div class="settings-section">
+                        <!-- PDF Report Period Selector -->
+                        <div class="setting-group" style="margin-bottom: 20px; padding: 15px; background: var(--bg-secondary); border-radius: 8px;">
+                            <label class="setting-label" style="font-weight: 600; margin-bottom: 12px;">📄 PDF Report Period</label>
+                            <span class="setting-helper" style="display: block; margin-bottom: 12px;">Select the month and year for your PDF export</span>
+                            <div style="display: flex; gap: 10px; align-items: flex-end;">
+                                <div style="flex: 1;">
+                                    <label for="pdf-export-month" style="display: block; font-size: 12px; margin-bottom: 5px; color: var(--text-secondary);">Month</label>
+                                    <select id="pdf-export-month" class="setting-select">
+                                        <option value="01">January</option>
+                                        <option value="02">February</option>
+                                        <option value="03">March</option>
+                                        <option value="04">April</option>
+                                        <option value="05">May</option>
+                                        <option value="06">June</option>
+                                        <option value="07">July</option>
+                                        <option value="08">August</option>
+                                        <option value="09">September</option>
+                                        <option value="10">October</option>
+                                        <option value="11">November</option>
+                                        <option value="12">December</option>
+                                    </select>
+                                </div>
+                                <div style="flex: 1;">
+                                    <label for="pdf-export-year" style="display: block; font-size: 12px; margin-bottom: 5px; color: var(--text-secondary);">Year</label>
+                                    <select id="pdf-export-year" class="setting-select">
+                                        <!-- Options will be populated by JavaScript -->
+                                    </select>
+                                </div>
+                                <button id="export-pdf-with-period-btn" class="btn-primary" style="white-space: nowrap;">📄 Export PDF</button>
+                            </div>
+                        </div>
+
+                        <!-- Other Export Buttons -->
+                        <div class="export-controls">
+                            <button id="export-excel-btn" class="btn-secondary">📥 Export to Excel</button>
+                            <button id="export-pdf-btn" class="btn-secondary" style="display: none;">📄 Download PDF Report</button>
+                            <button id="backup-data-btn" class="btn-secondary">💾 Backup Data</button>
+                            <button id="restore-data-btn" class="btn-secondary">♻️ Restore Data</button>
+                        </div>
+                        <div id="export-status" class="export-status" style="display: none;">
+                            <span id="export-message"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Privacy & Security Card -->
+            <div class="card settings-card">
+                <div class="card-header">
+                    <h2 class="card-title">🔒 Privacy & Security</h2>
+                </div>
+                <div class="card-body">
+                    <div class="settings-section">
+                        <div class="setting-toggle">
+                            <div class="toggle-info">
+                                <label class="setting-label">Require Login on App Open</label>
+                                <span class="setting-helper">Prompt for password every time you open the app</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="require-login-toggle" class="toggle-input">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-toggle">
+                            <div class="toggle-info">
+                                <label class="setting-label">Auto-Logout After Inactivity</label>
+                                <span class="setting-helper">Automatically logout after 30 minutes of inactivity</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="auto-logout-toggle" class="toggle-input">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-toggle">
+                            <div class="toggle-info">
+                                <label class="setting-label">Hide Amounts (Privacy Mode)</label>
+                                <span class="setting-helper">Blur transaction amounts on main view</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="hide-amounts-toggle" class="toggle-input">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-toggle">
+                            <div class="toggle-info">
+                                <label class="setting-label">Lock Analytics Page</label>
+                                <span class="setting-helper">Require password to view analytics</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="lock-analytics-toggle" class="toggle-input">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="settings-actions">
+                            <button id="save-security-btn" class="btn-primary">Save Security Settings</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About Card -->
+            <div class="card settings-card" id="about-section">
+                <div class="card-header">
+                    <h2 class="card-title">ℹ️ About SpendSense</h2>
+                </div>
+                <div class="card-body">
+                    <div class="about-section">
+                        <div class="about-item" id="contact-section">
+                            <span class="about-label">App Name:</span>
+                            <span class="about-value">SpendSense</span>
+                        </div>
+                        <div class="about-item" id="privacy-section">
+                            <span class="about-label">Version:</span>
+                            <span class="about-value">2.0.0</span>
+                        </div>
+                        <div class="about-item" id="terms-section">
+                            <span class="about-label">Developer:</span>
+                            <span class="about-value">SpendSense Team</span>
+                        </div>
+                        <div class="about-item">
+                            <span class="about-label">Support Email:</span>
+                            <span class="about-value"><a href="mailto:support@spendsense.com">support@spendsense.com</a></span>
+                        </div>
+                        <div class="about-item">
+                            <span class="about-label">Privacy Policy:</span>
+                            <span class="about-value"><a href="/privacy" target="_blank">Read Privacy Policy</a></span>
+                        </div>
+                        <div class="about-item">
+                            <span class="about-label">Terms of Service:</span>
+                            <span class="about-value"><a href="/terms" target="_blank">Read Terms</a></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast-notification" class="toast-notification">
+            <span id="toast-message"></span>
+        </div>
+
+        <!-- Modal for Password Change -->
+        <div id="password-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Change Password</h2>
+                    <button class="modal-close" id="password-modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-form-group">
+                        <label>Current Password</label>
+                        <input type="password" id="current-password-input" class="form-control" placeholder="Enter current password">
+                    </div>
+                    <div class="modal-form-group">
+                        <label>New Password</label>
+                        <input type="password" id="new-password-input" class="form-control" placeholder="Enter new password">
+                    </div>
+                    <div class="modal-form-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="confirm-password-input" class="form-control" placeholder="Confirm new password">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" id="password-modal-cancel">Cancel</button>
+                    <button class="btn-primary" id="password-change-confirm">Change Password</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal for Email Update -->
+        <div id="email-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Update Email Address</h2>
+                    <button class="modal-close" id="email-modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-form-group">
+                        <label>New Email Address</label>
+                        <input type="email" id="new-email-input" class="form-control" placeholder="Enter new email address">
+                    </div>
+                    <div class="modal-form-group">
+                        <label>Current Password (for verification)</label>
+                        <input type="password" id="email-password-input" class="form-control" placeholder="Enter your password">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" id="email-modal-cancel">Cancel</button>
+                    <button class="btn-primary" id="email-update-confirm">Update Email</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Overlay -->
+        <div id="modal-overlay" class="modal-overlay" style="display: none;"></div>
+    </div>
+
+    <!-- Global footer -->
+    <footer class="site-footer">
+        <div class="footer-links">
+            <a href="#about-section">About</a>
+            <a href="#contact-section">Contact</a>
+            <a href="#privacy-section">Privacy</a>
+            <a href="#terms-section">Terms</a>
+        </div>
+        <div class="footer-meta">
+            © {{ current_year if current_year is defined else 2026 }} SpendSense. All rights reserved.
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}?v={{ cache_buster }}"></script>
+    <script src="{{ url_for('static', filename='js/settings.js') }}?v={{ cache_buster }}"></script>
+</body>
+</html>

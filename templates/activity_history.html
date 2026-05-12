@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity History - SpendSense</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Auth Section -->
+        <div id="auth-section" class="section">
+            <div class="auth-container">
+                <div class="brand">
+                    <img src="{{ url_for('static', filename='img/spendsense-logo.svg') }}" alt="SpendSense Logo" class="brand-logo">
+                    <h1 class="brand-title">SpendSense</h1>
+                </div>
+                <div id="auth-error" class="error-message"></div>
+            </div>
+        </div>
+
+        <!-- Main App Section -->
+        <div id="app-section" class="section" style="display: none;">
+            <header class="app-header">
+                <div class="brand">
+                    <img src="{{ url_for('static', filename='img/spendsense-logo.svg') }}" alt="SpendSense Logo" class="brand-logo">
+                    <h1 class="brand-title">SpendSense</h1>
+                </div>
+                <nav class="main-nav">
+                    <a href="/" class="nav-link">Dashboard</a>
+                    <a href="/analytics" class="nav-link">Analytics</a>
+                    <a href="/recurring-subscriptions" class="nav-link">Recurring & Subscriptions</a>
+                    <a href="/reports" class="nav-link">Reports</a>
+                    <a href="/activity-history" class="nav-link active">Activity</a>
+                    <a href="/settings" class="nav-link">Settings</a>
+                </nav>
+                <div class="header-controls">
+                    <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Dark Mode">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="theme-icon">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
+                    <div class="user-info">
+                        {% if request.endpoint == 'index' %}
+                        <span class="welcome-text">Welcome, <span id="username-display" class="username-highlight"></span></span>
+                        {% endif %}
+                        <button id="logout-btn" class="btn-primary">Logout</button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="main-content">
+                <div class="activity-container">
+                    <!-- Activity Summary Card -->
+                    <div class="card activity-summary-card">
+                        <h2 class="card-title">📊 Activity Summary</h2>
+                        <div id="activity-stats" class="activity-stats-grid">
+                            <div class="stat-card">
+                                <span class="stat-label">Total Activities</span>
+                                <span id="total-activities" class="stat-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activity Filters Card -->
+                    <div class="card activity-filters-card">
+                        <h2 class="card-title">🔍 Filter & Search</h2>
+                        <div class="filter-section">
+                            <div class="search-box-wrapper">
+                                <input type="text" id="activity-search" class="activity-search-box" placeholder="Search activities…">
+                                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+
+                            <div class="activity-type-filter">
+                                <label class="filter-label">Activity Type:</label>
+                                <div class="filter-buttons">
+                                    <button class="filter-btn active" data-type="all">All Activities</button>
+                                    <button class="filter-btn" data-type="expense">Expenses</button>
+                                    <button class="filter-btn" data-type="budget">Budget</button>
+                                    <button class="filter-btn" data-type="category">Categories</button>
+                                    <button class="filter-btn" data-type="settings">Settings</button>
+                                    <button class="filter-btn" data-type="recurring_expense">Recurring</button>
+                                    <button class="filter-btn" data-type="subscription">Subscriptions</button>
+                                </div>
+                            </div>
+
+                            <div class="activity-action-filter">
+                                <label class="filter-label">Action Type:</label>
+                                <div class="filter-buttons">
+                                    <button class="action-filter-btn active" data-action="all">All Actions</button>
+                                    <button class="action-filter-btn" data-action="Created">Created</button>
+                                    <button class="action-filter-btn" data-action="Updated">Updated</button>
+                                    <button class="action-filter-btn" data-action="Deleted">Deleted</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activity Timeline Card -->
+                    <div class="card activity-timeline-card">
+                        <h2 class="card-title">⏰ Activity Timeline</h2>
+                        <div class="activity-timeline-info">
+                            <p class="timeline-info-text">Complete history of your activities. All changes are logged for audit and debugging purposes.</p>
+                        </div>
+                        
+                        <div id="activity-timeline" class="activity-timeline">
+                            <div class="timeline-loading">Loading activities...</div>
+                        </div>
+                        
+                        <div class="load-more-section">
+                            <button id="load-more-activities" class="btn-secondary" style="display: none;">
+                                Load More Activities
+                            </button>
+                            <div id="no-more-activities" class="no-more-message" style="display: none;">
+                                No more activities to load
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Snackbar for notifications -->
+    <div id="snackbar" class="snackbar hide">
+        <span id="snackbar-message" class="snackbar-message"></span>
+        <button id="snackbar-action" class="snackbar-action">Undo</button>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/activity_history.js') }}"></script>
+</body>
+</html>
